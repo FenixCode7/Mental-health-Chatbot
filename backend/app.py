@@ -29,12 +29,25 @@ MAX_MESSAGE_CHARS = 4000
 provider = get_provider()
 
 app = FastAPI(title="Sukun API")
+# Which websites may call this API from the browser, e.g.
+# ALLOWED_ORIGINS=https://sukun.vercel.app,http://localhost:5173
+ALLOWED_ORIGINS = [
+    o.strip().rstrip("/")
+    for o in os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",")
+    if o.strip()
+]
+log.info("CORS allowed origins: %s", ALLOWED_ORIGINS)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[o.strip() for o in os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",")],
+    allow_origins=ALLOWED_ORIGINS,
     allow_methods=["GET", "POST"],
     allow_headers=["Content-Type"],
 )
+
+
+@app.get("/")
+async def root():
+    return {"service": "Sukun API", "health": "/api/health"}
 
 
 class ChatMessage(BaseModel):

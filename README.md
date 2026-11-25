@@ -73,3 +73,19 @@ In https://console.cloud.google.com create a project, enable **YouTube Data API 
 restart the backend. The free quota allows about 100 searches per day.
 
 The key stays on the server: the browser calls `/api/music/search` and the backend calls YouTube.
+
+## Deploying (Render backend + Vercel frontend)
+
+**Backend on Render**
+1. On https://dashboard.render.com choose **New → Blueprint**, connect this GitHub repo.
+   Render reads [render.yaml](render.yaml) and creates the `sukun-api` web service (free plan).
+2. Fill in the secrets it asks for: `GROQ_API_KEY`, `YOUTUBE_API_KEY`, and `ALLOWED_ORIGINS`
+   (your Vercel URL, e.g. `https://your-app.vercel.app`, no trailing slash).
+3. After the deploy, open `https://<service>.onrender.com/api/health`; it should say `"status":"ok"`.
+
+**Frontend on Vercel**
+1. Project settings → **Root Directory** = `frontend` (framework: Vite).
+2. **Environment Variables** → `VITE_API_URL` = your Render URL, e.g. `https://sukun-api.onrender.com`.
+3. Redeploy (Vite bakes the variable in at build time).
+
+The free Render plan sleeps after ~15 minutes idle; the first request afterwards can take up to a minute.

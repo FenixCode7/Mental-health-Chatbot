@@ -1,0 +1,28 @@
+# Render Blueprint for the Sukun backend (FastAPI).
+# The frontend is hosted separately on Vercel.
+services:
+  - type: web
+    name: sukun-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.8
+      - key: LLM_PROVIDER
+        value: groq
+      - key: GROQ_MODEL
+        value: openai/gpt-oss-120b
+      # Secrets: Render asks for these when you create the Blueprint (never commit them).
+      - key: GROQ_API_KEY
+        sync: false
+      - key: YOUTUBE_API_KEY
+        sync: false
+      # Your Vercel site URL(s), comma-separated, no trailing slash.
+      - key: ALLOWED_ORIGINS
+        sync: false
+      - key: MUSIC_REGION
+        value: IN

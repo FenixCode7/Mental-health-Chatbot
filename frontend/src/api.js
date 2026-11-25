@@ -1,12 +1,24 @@
+// Where the backend lives. Empty in local dev (Vite proxies /api to :8000);
+// on Vercel set VITE_API_URL to the Render URL, e.g. https://sukun-api.onrender.com
+const API = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
+
 // Streams a chat reply from the backend (Server-Sent Events over a POST).
 // Calls onEvent(type, data) for each event: "delta", "crisis", "done", "error".
 export async function streamChat(messages, onEvent, signal) {
-  const res = await fetch("/api/chat", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ messages }),
-    signal,
-  });
+  let res;
+  try {
+    res = await fetch(`${API}/api/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messages }),
+      signal,
+    });
+  } catch (err) {
+    if (err.name === "AbortError") throw err;
+    // Render's free plan sleeps when idle; the first request can take ~a minute.
+    onEvent("error", { message: "Couldn't reach the server. If it was asleep, it's waking up now. Please try again in a minute." });
+    return;
+  }
 
   if (!res.ok || !res.body) {
     onEvent("error", { message: "Couldn't reach the server. Is the backend running?" });
@@ -39,7 +51,7 @@ export async function streamChat(messages, onEvent, signal) {
 
 export async function fetchMusicConfig() {
   try {
-    const res = await fetch("/api/music/config");
+    const res = await fetch(`${API}/api/music/config`);
     return await res.json();
   } catch {
     return { youtube: false };
@@ -49,7 +61,7 @@ export async function fetchMusicConfig() {
 // YouTube song search. Returns { results } or { error }.
 export async function searchMusic(q, signal) {
   try {
-    const res = await fetch(`/api/music/search?q=${encodeURIComponent(q)}`, { signal });
+    const res = await fetch(`${API}/api/music/search?q=${encodeURIComponent(q)}`, { signal });
     const data = await res.json();
     if (!res.ok) return { error: data.error || "Search failed. Please try again." };
     return data;
@@ -61,7 +73,7 @@ export async function searchMusic(q, signal) {
 
 export async function fetchResources() {
   try {
-    const res = await fetch("/api/resources");
+    const res = await fetch(`${API}/api/resources`);
     return (await res.json()).resources;
   } catch {
     return [];
